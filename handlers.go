@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/alcounit/adaptee/selenoid"
 	"github.com/koding/websocketproxy"
@@ -33,8 +34,8 @@ type Service struct {
 	Labels    map[string]string `json:"labels"`
 }
 
-//Status ...
-type Status struct {
+//Selenosis ...
+type Selenosis struct {
 	Total    int                 `json:"total"`
 	Used     int                 `json:"used"`
 	Browsers map[string][]string `json:"config,omitempty"`
@@ -69,13 +70,13 @@ func (app *App) HandleStatus(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	type Response struct {
-		Status    int    `json:"status"`
-		Error     error  `json:"err"`
-		Selenosis Status `json:"selenosis"`
+	type status struct {
+		Status    int       `json:"status"`
+		Error     error     `json:"err"`
+		Selenosis Selenosis `json:"selenosis"`
 	}
 
-	stats := Response{}
+	stats := status{}
 	err = json.Unmarshal(body, &stats)
 	if err != nil {
 		json.NewEncoder(w).Encode(state)
@@ -92,10 +93,10 @@ func (app *App) HandleStatus(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	for _, session := range stats.Selenosis.Sessions {
+	for _, entry := range stats.Selenosis.Sessions {
 		state.Used++
-		browserName := session.Labels[defaults.browserName]
-		browserVersion := session.Labels[defaults.browserVersion]
+		browserName := entry.Labels[defaults.browserName]
+		browserVersion := entry.Labels[defaults.browserVersion]
 		_, ok := state.Browsers[browserName]
 		if !ok {
 			state.Browsers[browserName] = make(selenoid.Version)
@@ -105,29 +106,37 @@ func (app *App) HandleStatus(w http.ResponseWriter, r *http.Request) {
 			state.Browsers[browserName][browserVersion] = make(selenoid.Quota)
 		}
 
-		v := &selenoid.Sessions{0, []selenoid.Session{}}
-		state.Browsers[browserName][browserVersion]["unknown"] = v
-
+		v, ok := state.Browsers[browserName][browserVersion]["unknown"]
+		if !ok {
+			v = &selenoid.Sessions{0, []selenoid.Session{}}
+			state.Browsers[browserName][browserVersion]["unknown"] = v
+		}
 		var vnc bool
-		if session.Labels[defaults.screenResolution] != "" {
-			vnc = true
+		vnc, err = strconv.ParseBool(entry.Labels[defaults.enableVNC])
+		if err != nil {
+			vnc = false
 		}
 		v.Count++
 		sess := selenoid.Session{
-			ID:        session.SessionID,
-			Container: session.SessionID,
+			ID:        entry.SessionID,
+			Container: entry.SessionID,
 			Caps: selenoid.Caps{
 				BrowserName:      browserName,
 				BrowserVersion:   browserVersion,
-				ScreenResolution: session.Labels[defaults.screenResolution],
+				ScreenResolution: entry.Labels[defaults.screenResolution],
 				VNC:              vnc,
-				TestName:         session.Labels[defaults.testName],
-				TimeZone:         session.Labels[defaults.timeZone],
+				TestName:         entry.Labels[defaults.testName],
+				TimeZone:         entry.Labels[defaults.timeZone],
 			},
 		}
-		sess.Container = session.SessionID
+		sess.Container = entry.SessionID
 		v.Sessions = append(v.Sessions, sess)
 	}
+
+	output, _ := json.Marshal(state)
+
+	logger.Infof("reponse body %v", string(output))
+
 	w.WriteHeader(resp.StatusCode)
 	json.NewEncoder(w).Encode(state)
 	logger.Info("status response OK")
