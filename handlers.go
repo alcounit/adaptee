@@ -133,10 +133,6 @@ func (app *App) HandleStatus(w http.ResponseWriter, r *http.Request) {
 		v.Sessions = append(v.Sessions, sess)
 	}
 
-	output, _ := json.Marshal(state)
-
-	logger.Infof("reponse body %v", string(output))
-
 	w.WriteHeader(resp.StatusCode)
 	json.NewEncoder(w).Encode(state)
 	logger.Info("status response OK")
