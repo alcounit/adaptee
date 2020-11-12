@@ -37,7 +37,8 @@ type Service struct {
 //Selenosis ...
 type Selenosis struct {
 	Total    int                 `json:"total"`
-	Used     int                 `json:"used"`
+	Active   int                 `json:"active"`
+	Pending  int                 `json:"pending"`
 	Browsers map[string][]string `json:"config,omitempty"`
 	Sessions []*Service          `json:"sessions,omitempty"`
 }
@@ -85,6 +86,8 @@ func (app *App) HandleStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	state.Total = stats.Selenosis.Total
+	state.Used = stats.Selenosis.Active
+	state.Pending = stats.Selenosis.Pending
 
 	for n, b := range stats.Selenosis.Browsers {
 		state.Browsers[n] = make(selenoid.Version)
@@ -94,7 +97,6 @@ func (app *App) HandleStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, entry := range stats.Selenosis.Sessions {
-		state.Used++
 		browserName := entry.Labels[defaults.browserName]
 		browserVersion := entry.Labels[defaults.browserVersion]
 		_, ok := state.Browsers[browserName]
