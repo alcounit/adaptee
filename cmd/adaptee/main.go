@@ -75,8 +75,9 @@ func command() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&address, "port", ":4444", "adaptee port")
-	cmd.Flags().StringVar(&selenosisURL, "selenosis-url", "http://selenosis-local:4444", "selenosis url")
+	cmd.Flags().StringVar(&selenosisURL, "selenosis-url", "http://selenosis:4444", "selenosis url")
 	cmd.Flags().DurationVar(&shutdownTimeout, "graceful-shutdown-timeout", 30*time.Second, "time in seconds  gracefull shutdown timeout")
+	cmd.Flags().SortFlags = false
 
 	return cmd
 }
