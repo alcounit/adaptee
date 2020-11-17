@@ -1,0 +1,14 @@
+name: docker-build-push
+on:
+  release:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Docker build and publish
+      run: |
+        TAG=$(echo $GITHUB_REF | grep -o "[0-9][\.].*")
+        docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
+        docker build --build-arg BUILD_VERSION=$TAG -t alcounit/adaptee:$TAG .
+        docker push alcounit/adaptee
