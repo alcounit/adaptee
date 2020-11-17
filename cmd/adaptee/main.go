@@ -15,6 +15,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var buildVersion = "HEAD"
+
 //command ...
 func command() *cobra.Command {
 	var (
@@ -27,7 +29,7 @@ func command() *cobra.Command {
 		Short: "adaptee is a adaptor sidecar for selenoid ui",
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := logrus.New()
-			logger.Infof("starting selenoid ui adaptor: %s", address)
+			logger.Infof("starting selenoid ui adaptor %s: %s", buildVersion, address)
 
 			_, err := url.Parse(selenosisURL)
 			if err != nil {
