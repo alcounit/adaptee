@@ -1,14 +1,39 @@
-name: docker-build-push
+name: Release
 on:
-  release:
+  create:
+    tags:
+      - v*
+
 jobs:
-  build:
+  docker:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Docker build and publish
-      run: |
-        TAG=$(echo $GITHUB_REF | grep -o "[0-9][\.].*")
-        docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
-        docker build --build-arg BUILD_VERSION=$TAG -t alcounit/adaptee:$TAG .
-        docker push alcounit/adaptee
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - 
+        name: Get tag version
+        id: get_version
+        run: echo ::set-output name=VERSION::``${GITHUB_REF#refs/tags/}``
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      -
+        name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          build-args: BUILD_VERSION=${{ steps.get_version.outputs.VERSION }}
+          tags: |
+            alcounit/adaptee:latest
+            alcounit/adaptee:${{ steps.get_version.outputs.VERSION }}
