@@ -1,3 +1,6 @@
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/alcounit/adaptee)
+![Docker Pulls](https://img.shields.io/docker/pulls/alcounit/adaptee)
+![GitHub](https://img.shields.io/github/license/alcounit/adaptee)
 # adaptee
 Selenoid-ui adaptor for selenosis
 
